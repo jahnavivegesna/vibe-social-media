@@ -1,0 +1,522 @@
+/* ============================================================
+   VIBE - EXTRA STYLES
+   Animations, additional components, edge cases
+   ============================================================ */
+
+/* ============================================================
+   STORY BAR (Instagram-style at top of feed)
+   ============================================================ */
+.story-bar {
+  display: flex;
+  gap: .875rem;
+  overflow-x: auto;
+  padding: 1rem 0 .5rem;
+  margin-bottom: 1rem;
+  scrollbar-width: none;
+}
+.story-bar::-webkit-scrollbar { display: none; }
+
+.story-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--transition-bounce);
+}
+.story-item:hover { transform: scale(1.06); }
+
+.story-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  padding: 2.5px;
+  background: var(--gradient-main);
+  transition: var(--transition);
+}
+.story-ring.seen { background: var(--border-color); }
+
+.story-ring img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid var(--bg-primary);
+}
+
+.story-label {
+  font-size: .68rem;
+  color: var(--text-muted);
+  max-width: 60px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* ============================================================
+   POST TYPE BADGES
+   ============================================================ */
+.post-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.badge-image { background: rgba(16,185,129,.12); color: var(--vibe-green); }
+.badge-video { background: rgba(236,72,153,.12); color: var(--vibe-pink); }
+.badge-text  { background: rgba(124,58,237,.12); color: var(--vibe-purple); }
+
+/* ============================================================
+   MENTION LINK
+   ============================================================ */
+.mention-link {
+  color: var(--vibe-cyan);
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.mention-link:hover {
+  color: var(--vibe-purple);
+  text-decoration: underline;
+}
+
+/* ============================================================
+   LOAD MORE BUTTON (fallback for infinite scroll)
+   ============================================================ */
+.load-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .625rem;
+  width: 100%;
+  padding: .875rem;
+  background: var(--bg-card);
+  border: 1.5px dashed var(--border-color);
+  border-radius: var(--radius-xl);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-top: .5rem;
+}
+.load-more-btn:hover {
+  border-color: var(--vibe-purple);
+  color: var(--vibe-purple);
+  background: rgba(124,58,237,.05);
+}
+
+/* ============================================================
+   PROFILE TAB SYSTEM
+   ============================================================ */
+.profile-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  gap: .25rem;
+}
+.profile-tab {
+  padding: .625rem 1.25rem;
+  font-family: var(--font-body);
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: var(--transition);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.profile-tab:hover { color: var(--vibe-purple); }
+.profile-tab.active {
+  color: var(--vibe-purple);
+  border-bottom-color: var(--vibe-purple);
+}
+
+/* ============================================================
+   SEARCH RESULTS PAGE
+   ============================================================ */
+.search-filter-tabs {
+  display: flex;
+  gap: .375rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  padding-bottom: .25rem;
+  scrollbar-width: none;
+}
+.search-filter-tabs::-webkit-scrollbar { display: none; }
+
+.filter-tab {
+  flex-shrink: 0;
+  padding: .4rem .875rem;
+  border-radius: var(--radius-full);
+  font-size: .8rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: var(--transition);
+}
+.filter-tab.active,
+.filter-tab:hover {
+  background: var(--gradient-main);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(124,58,237,.3);
+}
+
+/* ============================================================
+   NOTIFICATION GROUPS
+   ============================================================ */
+.notif-date-group {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 1rem 0 .5rem;
+}
+
+/* ============================================================
+   GLASSMORPHISM HERO CARDS
+   ============================================================ */
+.glass-hero {
+  background: linear-gradient(135deg, rgba(124,58,237,.15) 0%, rgba(236,72,153,.1) 100%);
+  border: 1px solid rgba(124,58,237,.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.glass-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(124,58,237,.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ============================================================
+   FLOATING ACTION BUTTON (mobile)
+   ============================================================ */
+.fab {
+  position: fixed;
+  bottom: 5rem;
+  right: 1.25rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--gradient-main);
+  color: white;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(124,58,237,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-bounce);
+  z-index: 200;
+  display: none;
+}
+.fab:hover { transform: scale(1.1) rotate(5deg); }
+@media (max-width:768px) { .fab { display: flex; } }
+
+/* ============================================================
+   SETTINGS PAGE ROWS
+   ============================================================ */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+  transition: var(--transition);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row:hover { background: var(--bg-hover); margin: 0 -.5rem; padding: 1rem .5rem; border-radius: var(--radius-sm); }
+
+.settings-row-label {
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--text-primary);
+  margin-bottom: .15rem;
+}
+.settings-row-desc {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   USER CARD (search results)
+   ============================================================ */
+.user-search-card {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  padding: .875rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+  text-decoration: none;
+  margin-bottom: .625rem;
+}
+.user-search-card:hover {
+  border-color: rgba(124,58,237,.3);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+.user-search-card img {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+.user-search-info { flex: 1; }
+.user-search-name {
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text-primary);
+}
+.user-search-handle {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.user-search-bio {
+  font-size: .78rem;
+  color: var(--text-secondary);
+  margin-top: .15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+}
+
+/* ============================================================
+   ADMIN CHARTS PLACEHOLDER
+   ============================================================ */
+.chart-placeholder {
+  height: 200px;
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  color: var(--text-muted);
+  font-size: .85rem;
+  border: 2px dashed var(--border-color);
+}
+
+/* ============================================================
+   ANIMATED GRADIENT BORDER
+   ============================================================ */
+.gradient-border {
+  position: relative;
+  border-radius: var(--radius-xl);
+  padding: 2px;
+  background: var(--gradient-main);
+}
+.gradient-border > * {
+  border-radius: calc(var(--radius-xl) - 2px);
+  background: var(--bg-secondary);
+}
+
+/* ============================================================
+   TAG INPUT (for hashtag search)
+   ============================================================ */
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .375rem;
+  padding: .5rem 0;
+}
+
+/* ============================================================
+   REPORT STATUS BADGES
+   ============================================================ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .2rem .625rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.status-pending  { background: rgba(245,158,11,.15); color: var(--vibe-yellow); }
+.status-resolved { background: rgba(16,185,129,.15);  color: var(--vibe-green); }
+.status-dismissed{ background: rgba(139,126,168,.15); color: var(--text-muted); }
+
+/* ============================================================
+   INFINITE SCROLL LOADER ANIMATION
+   ============================================================ */
+.dots-loader {
+  display: flex;
+  gap: .4rem;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.dots-loader span {
+  width: 8px; height: 8px;
+  background: var(--vibe-purple);
+  border-radius: 50%;
+  animation: dotBounce 1.2s ease infinite;
+}
+.dots-loader span:nth-child(2) { animation-delay: .15s; background: var(--vibe-pink); }
+.dots-loader span:nth-child(3) { animation-delay: .3s;  background: var(--vibe-orange); }
+
+@keyframes dotBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 1; }
+  30%           { transform: translateY(-10px); opacity: .7; }
+}
+
+/* ============================================================
+   PROGRESS BAR (for password strength)
+   ============================================================ */
+.strength-bar-wrap {
+  display: flex;
+  gap: .2rem;
+  margin-top: .4rem;
+}
+.strength-segment {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-color);
+  transition: background .3s;
+}
+
+/* ============================================================
+   RIPPLE EFFECT ON BUTTONS
+   ============================================================ */
+.btn-vibe {
+  position: relative;
+  overflow: hidden;
+}
+.btn-vibe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.2);
+  border-radius: inherit;
+  transform: scale(0);
+  opacity: 0;
+  transition: transform .4s ease, opacity .4s ease;
+}
+.btn-vibe:active::after {
+  transform: scale(2);
+  opacity: 1;
+  transition: 0s;
+}
+
+/* ============================================================
+   MOBILE-SPECIFIC TWEAKS
+   ============================================================ */
+@media (max-width: 480px) {
+  .vibe-card { padding: 1rem; border-radius: var(--radius-lg); }
+  .post-card { border-radius: var(--radius-lg); }
+  .post-header { padding: .875rem 1rem; }
+  .post-content { padding: 0 1rem .875rem; }
+  .post-footer { padding: .625rem 1rem; }
+  .auth-card { margin: .5rem; border-radius: var(--radius-lg); }
+  .auth-logo { font-size: 2rem; }
+  .explore-hero { padding: 1.5rem 1rem; }
+  .explore-hero h1 { font-size: 1.5rem; }
+  .profile-name { font-size: 1.25rem; }
+  .profile-stats { gap: 1rem; }
+  .profile-stat-num { font-size: 1.2rem; }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  .vibe-navbar, .vibe-sidebar-left, .vibe-sidebar-right,
+  .mobile-nav, .post-footer, .toast-container { display: none !important; }
+  .vibe-layout { display: block; padding: 0; }
+  .post-card { border: 1px solid #ddd; break-inside: avoid; }
+}
+
+/* ============================================================
+   FOCUS ACCESSIBILITY
+   ============================================================ */
+:focus-visible {
+  outline: 2.5px solid var(--vibe-purple);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   SELECTION COLOR
+   ============================================================ */
+::selection {
+  background: rgba(124, 58, 237, 0.25);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   SMOOTH PAGE LOAD
+   ============================================================ */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.vibe-main {
+  animation: pageEnter .35s ease;
+}
+
+/* ============================================================
+   VERIFIED PROFILE BANNER
+   ============================================================ */
+.verified-banner {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  background: linear-gradient(135deg, rgba(6,182,212,.1) 0%, rgba(124,58,237,.1) 100%);
+  border: 1px solid rgba(6,182,212,.25);
+  border-radius: var(--radius-lg);
+  padding: .875rem 1rem;
+  margin-bottom: 1rem;
+  font-size: .85rem;
+  color: var(--vibe-cyan);
+  font-weight: 500;
+}
+
+/* ============================================================
+   DARK MODE TRANSITION
+   ============================================================ */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+}
+/* But NOT layout/transform/opacity to avoid jank on hover */
+.btn-vibe, .sidebar-nav-item, .reaction-btn, .post-card,
+.nav-icon-btn, .follow-btn, .vibe-card, .widget-card {
+  transition: var(--transition);
+}
+.btn-vibe { transition: var(--transition-bounce); }

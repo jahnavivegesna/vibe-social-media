@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VIBE - The colorful social media platform for everyone">
+  <title>{% block title %}{% if page_title %}{{ page_title }} · VIBE{% else %}VIBE — Feel the Vibe{% endif %}{% endblock %}</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Main CSS -->
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/extras.css' %}">
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ============================================================
+     HIDDEN DJANGO MESSAGES (shown as toasts via JS)
+     ============================================================ -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="django-message" data-type="{{ message.tags }}" style="display:none">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div class="toast-container" id="toast-container"></div>
+
+{% block full_page %}
+
+<!-- ============================================================
+     TOP NAVIGATION BAR
+     ============================================================ -->
+<nav class="vibe-navbar">
+  <!-- Logo + Mobile Menu Button -->
+  <div style="display:flex;align-items:center;gap:.75rem;">
+    <button id="mobile-menu-btn" class="nav-icon-btn" style="display:none" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <a href="{% url 'home' %}" class="vibe-logo">VIBE</a>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="navbar-search">
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" placeholder="Search users, posts, #tags..." 
+           id="navbar-search-input" autocomplete="off">
+  </div>
+
+  <!-- Actions -->
+  <div class="navbar-actions">
+    <!-- Explore -->
+    <a href="{% url 'explore' %}" class="nav-icon-btn" title="Explore">
+      <i class="fas fa-compass"></i>
+    </a>
+
+    {% if user.is_authenticated %}
+      <!-- Create Post -->
+      <a href="#" class="nav-icon-btn" title="Create Post" data-modal="create-post-modal"
+         style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:white;border-color:transparent;">
+        <i class="fas fa-plus"></i>
+      </a>
+
+      <!-- Notifications -->
+      <a href="{% url 'notifications' %}" class="nav-icon-btn nav-notif-btn" title="Notifications">
+        <i class="fas fa-bell"></i>
+        {% if unread_notifications > 0 %}
+          <span class="notif-badge">{{ unread_notifications }}</span>
+        {% endif %}
+      </a>
+
+      <!-- Theme Toggle -->
+      <button class="theme-toggle" title="Toggle dark/light mode">🌙</button>
+
+      <!-- User Avatar Dropdown -->
+      <div class="dropdown">
+        <img src="{{ user.profile.get_profile_pic_url }}" 
+             alt="{{ user.username }}" 
+             class="nav-avatar"
+             data-dropdown="user-dropdown"
+             onerror="this.src='{% static 'images/default_avatar.png' %}'">
+        <div class="dropdown-menu" id="user-dropdown">
+          <a href="{% url 'user_profile' user.username %}" class="dropdown-item">
+            <i class="fas fa-user"></i> My Profile
+          </a>
+          <a href="{% url 'edit_profile' user.username %}" class="dropdown-item">
+            <i class="fas fa-pen"></i> Edit Profile
+          </a>
+          <a href="{% url 'settings' %}" class="dropdown-item">
+            <i class="fas fa-cog"></i> Settings
+          </a>
+          {% if user.is_staff %}
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'admin_dashboard' %}" class="dropdown-item">
+              <i class="fas fa-shield-halved"></i> Admin Panel
+            </a>
+          {% endif %}
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'logout' %}" class="dropdown-item danger">
+            <i class="fas fa-right-from-bracket"></i> Logout
+          </a>
+        </div>
+      </div>
+
+    {% else %}
+      <button class="theme-toggle" title="Toggle theme">🌙</button>
+      <a href="{% url 'login' %}" class="btn-vibe btn-secondary btn-sm">Login</a>
+      <a href="{% url 'signup' %}" class="btn-vibe btn-primary btn-sm">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Mobile sidebar overlay -->
+<div id="sidebar-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:499;backdrop-filter:blur(2px);"
+     onclick="document.querySelector('.vibe-sidebar-left').classList.remove('mobile-open');this.style.display='none'"></div>
+
+<!-- ============================================================
+     MAIN LAYOUT
+     ============================================================ -->
+<div class="vibe-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="vibe-sidebar-left">
+    {% if user.is_authenticated %}
+    <!-- User mini card -->
+    <a href="{% url 'user_profile' user.username %}" class="sidebar-user-card" style="text-decoration:none;">
+      <img src="{{ user.profile.get_profile_pic_url }}" alt="{{ user.username }}"
+           onerror="this.src='{% static 'images/default_avatar.png' %}'">
+      <div class="sidebar-user-info">
+        <span class="username">{{ user.get_full_name|default:user.username }}</span>
+        <span class="handle">@{{ user.username }}</span>
+      </div>
+    </a>
+    {% endif %}
+
+    <!-- Navigation Links -->
+    <nav class="sidebar-nav">
+      <a href="{% url 'home' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-house"></i></span>
+        <span class="nav-label">Home</span>
+      </a>
+      <a href="{% url 'explore' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-compass"></i></span>
+        <span class="nav-label">Explore</span>
+      </a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'notifications' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-bell"></i></span>
+        <span class="nav-label">Notifications</span>
+        {% if unread_notifications > 0 %}
+          <span style="margin-left:auto;background:var(--vibe-pink);color:white;font-size:.65rem;font-weight:700;padding:.1rem .45rem;border-radius:9px;">{{ unread_notifications }}</span>
+        {% endif %}
+      </a>
+      <a href="{% url 'user_profile' user.username %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'user_profile' %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-user"></i></span>
+        <span class="nav-label">Profile</span>
+      </a>
+      <a href="{% url 'settings' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+        <span class="nav-icon"><i class="fas fa-cog"></i></span>
+        <span class="nav-label">Settings</span>
+      </a>
+      {% if user.is_staff %}
+      <a href="{% url 'admin_dashboard' %}" class="sidebar-nav-item">
+        <span class="nav-icon"><i class="fas fa-shield-halved"></i></span>
+        <span class="nav-label">Admin</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'logout' %}" class="sidebar-nav-item" style="margin-top:auto;">
+        <span class="nav-icon"><i class="fas fa-right-from-bracket"></i></span>
+        <span class="nav-label">Logout</span>
+      </a>
+      {% else %}
+      <a href="{% url 'login' %}" class="sidebar-nav-item">
+        <span class="nav-icon"><i class="fas fa-right-to-bracket"></i></span>
+        <span class="nav-label">Login</span>
+      </a>
+      <a href="{% url 'signup' %}" class="sidebar-nav-item">
+        <span class="nav-icon"><i class="fas fa-user-plus"></i></span>
+        <span class="nav-label">Sign Up</span>
+      </a>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="vibe-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="vibe-sidebar-right">
+    {% block right_sidebar %}
+    {% if user.is_authenticated %}
+
+    <!-- Trending Hashtags -->
+    {% if trending_hashtags %}
+    <div class="widget-card">
+      <h3 class="widget-title">🔥 Trending</h3>
+      {% for tag in trending_hashtags %}
+      <a href="{% url 'hashtag_feed' tag.name %}" class="trending-item">
+        <span class="trending-tag">#{{ tag.name }}</span>
+        <span class="trending-count">{{ tag.get_post_count }} posts</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Suggested Users -->
+    {% if suggested_users %}
+    <div class="widget-card">
+      <h3 class="widget-title">✨ Suggested</h3>
+      {% for su in suggested_users %}
+      <div class="suggested-user">
+        <a href="{% url 'user_profile' su.username %}" class="suggested-user-info">
+          <img src="{{ su.profile.get_profile_pic_url }}" alt="{{ su.username }}"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <div>
+            <span class="suggested-name">{{ su.get_full_name|default:su.username }}</span>
+            <span class="suggested-handle">@{{ su.username }}</span>
+          </div>
+        </a>
+        <button class="btn-follow-sm follow-btn" data-username="{{ su.username }}">Follow</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Footer links -->
+    <div style="padding:.5rem .75rem;font-size:.72rem;color:var(--text-muted);line-height:2;">
+      <a href="#" style="color:var(--text-muted);text-decoration:none;margin-right:.75rem;">Privacy</a>
+      <a href="#" style="color:var(--text-muted);text-decoration:none;margin-right:.75rem;">Terms</a>
+      <a href="#" style="color:var(--text-muted);text-decoration:none;">Help</a>
+      <br>© 2025 VIBE Social Media
+    </div>
+    {% endif %}
+    {% endblock %}
+  </aside>
+</div>
+
+<!-- ============================================================
+     MOBILE BOTTOM NAVIGATION
+     ============================================================ -->
+{% if user.is_authenticated %}
+<nav class="mobile-nav">
+  <a href="{% url 'home' %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+    <i class="fas fa-house icon"></i>
+    <span>Home</span>
+  </a>
+  <a href="{% url 'explore' %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+    <i class="fas fa-compass icon"></i>
+    <span>Explore</span>
+  </a>
+  <a href="#" class="mobile-nav-item" data-modal="create-post-modal">
+    <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#EC4899);display:flex;align-items:center;justify-content:center;color:white;font-size:1.3rem;margin-top:-.5rem;box-shadow:0 4px 12px rgba(124,58,237,.4);">
+      <i class="fas fa-plus"></i>
+    </div>
+    <span>Post</span>
+  </a>
+  <a href="{% url 'notifications' %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+    <i class="fas fa-bell icon"></i>
+    <span>Alerts</span>
+    {% if unread_notifications > 0 %}<span class="notif-dot"></span>{% endif %}
+  </a>
+  <a href="{% url 'user_profile' user.username %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'user_profile' %}active{% endif %}">
+    <img src="{{ user.profile.get_profile_pic_url }}" alt="" 
+         style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color)"
+         onerror="this.src='{% static 'images/default_avatar.png' %}'">
+    <span>Me</span>
+  </a>
+</nav>
+{% endif %}
+
+<!-- ============================================================
+     CREATE POST MODAL (Global)
+     ============================================================ -->
+{% if user.is_authenticated %}
+<div class="modal-overlay" id="create-post-modal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">✨ Create a Post</h3>
+      <button class="modal-close"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{% url 'create_post' %}" enctype="multipart/form-data" id="create-post-form">
+        {% csrf_token %}
+        <input type="hidden" name="post_type" id="id_post_type" value="text">
+
+        <div style="display:flex;gap:.875rem;align-items:flex-start;">
+          <img src="{{ user.profile.get_profile_pic_url }}" alt="{{ user.username }}"
+               style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--vibe-purple);flex-shrink:0"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <textarea name="content" class="post-textarea" placeholder="What's on your mind? Use #hashtags and @mentions!" 
+                    style="width:100%;background:transparent;border:none;outline:none;resize:none;font-family:var(--font-text);font-size:1rem;color:var(--text-primary);min-height:100px;line-height:1.6;" maxlength="2000"></textarea>
+        </div>
+
+        <!-- Media preview -->
+        <div class="media-preview" style="margin-top:.875rem;"></div>
+
+        <div style="border-top:1px solid var(--border-color);margin-top:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;gap:.5rem;">
+            <label class="post-action-btn image-btn" style="cursor:pointer;" title="Add Image">
+              <i class="fas fa-image"></i> Photo
+              <input type="file" name="image" id="image-upload" accept="image/*" style="display:none">
+            </label>
+            <label class="post-action-btn video-btn" style="cursor:pointer;" title="Add Video">
+              <i class="fas fa-video"></i> Video
+              <input type="file" name="video" id="video-upload" accept="video/*" style="display:none">
+            </label>
+            <button type="button" class="post-action-btn emoji-btn" title="Add Emoji">
+              <i class="fas fa-face-smile"></i>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <span class="char-counter">0/2000</span>
+            <button type="submit" class="btn-vibe btn-primary">Post It! 🚀</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock full_page %}
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/extras.js' %}"></script>
+
+<!-- Mobile menu button visibility -->
+<style>
+  @media(max-width:768px){
+    #mobile-menu-btn{display:flex!important;}
+    #sidebar-overlay{display:block!important;opacity:0;pointer-events:none;transition:opacity .3s;}
+    #sidebar-overlay.active{opacity:1;pointer-events:all;}
+  }
+</style>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

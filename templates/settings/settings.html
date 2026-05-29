@@ -1,0 +1,120 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+
+  <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1.5rem;">
+    ⚙️ Settings
+  </h2>
+
+  <!-- Account Section -->
+  <div class="vibe-card" style="margin-bottom:1rem;">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1.25rem;">
+      🔐 Account & Security
+    </h3>
+
+    <form method="post" action="{% url 'change_password' %}">
+      {% csrf_token %}
+      <div style="display:grid;gap:1rem;margin-bottom:1.25rem;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Current Password</label>
+          <input type="password" name="old_password" class="vibe-input" placeholder="Your current password" required>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">New Password</label>
+          <input type="password" name="new_password" class="vibe-input" placeholder="New password (min. 8 chars)" required minlength="8">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" name="confirm_password" class="vibe-input" placeholder="Repeat new password" required>
+        </div>
+      </div>
+      <button type="submit" class="btn-vibe btn-primary btn-sm">
+        <i class="fas fa-lock"></i> Update Password
+      </button>
+    </form>
+  </div>
+
+  <!-- Appearance -->
+  <div class="vibe-card" style="margin-bottom:1rem;">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1.25rem;">
+      🎨 Appearance
+    </h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem;background:var(--bg-tertiary);border-radius:var(--radius-md);">
+      <div>
+        <p style="font-weight:600;font-size:.9rem;color:var(--text-primary);">Dark Mode</p>
+        <p style="font-size:.78rem;color:var(--text-muted);">Easy on the eyes at night</p>
+      </div>
+      <button class="theme-toggle" style="width:48px;height:28px;border-radius:14px;font-size:1rem;">🌙</button>
+    </div>
+  </div>
+
+  <!-- Privacy -->
+  <div class="vibe-card" style="margin-bottom:1rem;">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1.25rem;">
+      🔒 Privacy
+    </h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 0;border-bottom:1px solid var(--border-color);">
+      <div>
+        <p style="font-weight:600;font-size:.9rem;color:var(--text-primary);">Private Account</p>
+        <p style="font-size:.78rem;color:var(--text-muted);">Only followers see your posts</p>
+      </div>
+      <span style="font-size:.82rem;color:var(--vibe-purple);">
+        <a href="{% url 'edit_profile' user.username %}" style="color:var(--vibe-purple);text-decoration:none;font-weight:600;">
+          {% if user.profile.is_private %}On{% else %}Off{% endif %} →
+        </a>
+      </span>
+    </div>
+    <div style="padding:.875rem 0;">
+      <a href="{% url 'edit_profile' user.username %}" style="color:var(--vibe-purple);text-decoration:none;font-size:.875rem;font-weight:600;">
+        <i class="fas fa-pen" style="margin-right:.35rem;"></i>Edit Privacy Settings
+      </a>
+    </div>
+  </div>
+
+  <!-- Blocked Users -->
+  <div class="vibe-card" style="margin-bottom:1rem;">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1.25rem;">
+      🚫 Blocked Users
+    </h3>
+    {% if blocked_users %}
+      {% for block in blocked_users %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border-color);">
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <img src="{{ block.blocked.profile.get_profile_pic_url }}" alt="{{ block.blocked.username }}"
+               style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <div>
+            <p style="font-weight:600;font-size:.875rem;color:var(--text-primary);">{{ block.blocked.username }}</p>
+            <p style="font-size:.75rem;color:var(--text-muted);">Blocked {{ block.created_at|timesince }} ago</p>
+          </div>
+        </div>
+        <form method="post" action="{% url 'unblock_user' block.blocked.username %}">
+          {% csrf_token %}
+          <button class="btn-vibe btn-sm btn-secondary">Unblock</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--text-muted);font-size:.875rem;">You haven't blocked anyone.</p>
+    {% endif %}
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="vibe-card" style="border-color:rgba(239,68,68,.2);">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:#EF4444;margin-bottom:1.25rem;">
+      ⚠️ Danger Zone
+    </h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <p style="font-weight:600;font-size:.9rem;color:var(--text-primary);">Log Out of VIBE</p>
+        <p style="font-size:.78rem;color:var(--text-muted);">See you next time!</p>
+      </div>
+      <a href="{% url 'logout' %}" class="btn-vibe btn-sm" style="background:linear-gradient(135deg,#EF4444,#DC2626);color:white;">
+        <i class="fas fa-right-from-bracket"></i> Logout
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

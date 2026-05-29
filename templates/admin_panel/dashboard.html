@@ -1,0 +1,167 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div>
+
+  <!-- Header -->
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.25rem;">
+      🛡️ Admin Dashboard
+    </h2>
+    <p style="color:var(--text-muted);font-size:.9rem;">VIBE Platform Analytics & Management</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="admin-stat-card purple">
+      <div class="admin-stat-num">{{ stats.total_users }}</div>
+      <div class="admin-stat-label">Total Users</div>
+      <div style="font-size:.75rem;color:var(--vibe-green);margin-top:.5rem;">+{{ stats.new_users_week }} this week</div>
+    </div>
+    <div class="admin-stat-card pink">
+      <div class="admin-stat-num">{{ stats.total_posts }}</div>
+      <div class="admin-stat-label">Total Posts</div>
+      <div style="font-size:.75rem;color:var(--vibe-green);margin-top:.5rem;">+{{ stats.new_posts_week }} this week</div>
+    </div>
+    <div class="admin-stat-card green">
+      <div class="admin-stat-num">{{ stats.total_likes }}</div>
+      <div class="admin-stat-label">Total Likes</div>
+    </div>
+    <div class="admin-stat-card orange">
+      <div class="admin-stat-num">{{ stats.total_comments }}</div>
+      <div class="admin-stat-label">Total Comments</div>
+    </div>
+    <div class="admin-stat-card purple">
+      <div class="admin-stat-num">{{ stats.total_follows }}</div>
+      <div class="admin-stat-label">Follow Connections</div>
+    </div>
+    <div class="admin-stat-card pink" style="border-color:{% if stats.pending_reports > 0 %}rgba(236,72,153,.3){% endif %}">
+      <div class="admin-stat-num" style="{% if stats.pending_reports > 0 %}color:var(--vibe-pink){% endif %}">
+        {{ stats.pending_reports }}
+      </div>
+      <div class="admin-stat-label">Pending Reports</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+
+    <!-- Pending Reports -->
+    <div class="vibe-card">
+      <h3 class="widget-title">🚩 Pending Reports</h3>
+      {% if pending_reports %}
+        {% for report in pending_reports %}
+        <div style="padding:.875rem 0;border-bottom:1px solid var(--border-color);display:flex;flex-direction:column;gap:.5rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <span style="font-size:.78rem;font-weight:600;color:var(--vibe-pink);text-transform:uppercase;">{{ report.report_type }}</span>
+              <p style="font-size:.85rem;color:var(--text-primary);margin:.2rem 0;">
+                By <strong>{{ report.reporter.username }}</strong>
+                {% if report.reported_user %}→ <strong>{{ report.reported_user.username }}</strong>{% endif %}
+              </p>
+              {% if report.description %}
+                <p style="font-size:.78rem;color:var(--text-muted);">{{ report.description|truncatechars:80 }}</p>
+              {% endif %}
+            </div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <form method="post" action="{% url 'admin_resolve_report' report.id %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="resolve">
+              <button class="btn-vibe btn-sm" style="background:var(--vibe-green);color:white;border:none;padding:.3rem .75rem;">✓ Resolve</button>
+            </form>
+            <form method="post" action="{% url 'admin_resolve_report' report.id %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="dismiss">
+              <button class="btn-vibe btn-sm btn-secondary">Dismiss</button>
+            </form>
+            {% if report.reported_post %}
+            <form method="post" action="{% url 'admin_resolve_report' report.id %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_post">
+              <button class="btn-vibe btn-sm btn-danger">Delete Post</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:1.5rem 0;">
+          <div class="empty-state-emoji" style="font-size:2rem;">✅</div>
+          <p style="font-size:.85rem;color:var(--text-muted);">No pending reports!</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Top Users by Followers -->
+    <div class="vibe-card">
+      <h3 class="widget-title">⭐ Top Users</h3>
+      {% for top_user in top_users %}
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem 0;border-bottom:1px solid var(--border-color);">
+        <span style="font-size:.75rem;color:var(--text-muted);font-weight:700;width:20px;text-align:center;">{{ forloop.counter }}</span>
+        <img src="{{ top_user.profile.get_profile_pic_url }}" alt="{{ top_user.username }}"
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;"
+             onerror="this.src='{% static 'images/default_avatar.png' %}'">
+        <div style="flex:1;">
+          <a href="{% url 'user_profile' top_user.username %}" style="text-decoration:none;color:var(--text-primary);font-weight:600;font-size:.85rem;">
+            {{ top_user.username }}
+          </a>
+          <span style="display:block;font-size:.75rem;color:var(--text-muted);">{{ top_user.follower_count }} followers</span>
+        </div>
+        <form method="post" action="{% url 'admin_toggle_user' top_user.id %}">
+          {% csrf_token %}
+          <button class="btn-vibe btn-sm {% if top_user.is_active %}btn-secondary{% else %}btn-danger{% endif %}"
+                  style="font-size:.72rem;padding:.25rem .6rem;">
+            {% if top_user.is_active %}Active{% else %}Inactive{% endif %}
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+      <a href="{% url 'admin_users' %}" style="display:block;text-align:center;margin-top:1rem;font-size:.82rem;color:var(--vibe-purple);text-decoration:none;font-weight:600;">
+        View All Users →
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Posts -->
+  <div class="vibe-card">
+    <h3 class="widget-title">📝 Recent Posts</h3>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border-color);">
+            <th style="text-align:left;padding:.625rem .75rem;color:var(--text-muted);font-weight:600;">Author</th>
+            <th style="text-align:left;padding:.625rem .75rem;color:var(--text-muted);font-weight:600;">Content</th>
+            <th style="text-align:left;padding:.625rem .75rem;color:var(--text-muted);font-weight:600;">Type</th>
+            <th style="text-align:left;padding:.625rem .75rem;color:var(--text-muted);font-weight:600;">Likes</th>
+            <th style="text-align:left;padding:.625rem .75rem;color:var(--text-muted);font-weight:600;">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in recent_posts %}
+          <tr style="border-bottom:1px solid var(--border-color);transition:var(--transition);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+            <td style="padding:.625rem .75rem;">
+              <a href="{% url 'user_profile' post.author.username %}" style="color:var(--vibe-purple);font-weight:600;text-decoration:none;">@{{ post.author.username }}</a>
+            </td>
+            <td style="padding:.625rem .75rem;color:var(--text-secondary);">
+              <a href="{% url 'post_detail' post.id %}" style="color:var(--text-secondary);text-decoration:none;">
+                {{ post.content|truncatechars:60 }}
+              </a>
+            </td>
+            <td style="padding:.625rem .75rem;">
+              <span style="font-size:.72rem;padding:.2rem .5rem;border-radius:9999px;
+                background:{% if post.post_type == 'image' %}rgba(16,185,129,.15){% elif post.post_type == 'video' %}rgba(236,72,153,.15){% else %}rgba(124,58,237,.15){% endif %};
+                color:{% if post.post_type == 'image' %}var(--vibe-green){% elif post.post_type == 'video' %}var(--vibe-pink){% else %}var(--vibe-purple){% endif %};">
+                {{ post.post_type }}
+              </span>
+            </td>
+            <td style="padding:.625rem .75rem;color:var(--text-muted);">{{ post.get_likes_count }}</td>
+            <td style="padding:.625rem .75rem;color:var(--text-muted);">{{ post.created_at|date:"M d" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

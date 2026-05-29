@@ -1,0 +1,90 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">
+    <div>
+      <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+        👥 User Management
+      </h2>
+      <p style="color:var(--text-muted);font-size:.875rem;">{{ users.paginator.count }} total users</p>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="btn-vibe btn-secondary btn-sm">
+      <i class="fas fa-arrow-left"></i> Dashboard
+    </a>
+  </div>
+
+  <div class="vibe-card">
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border-color);">
+            <th style="text-align:left;padding:.75rem;color:var(--text-muted);font-weight:600;">User</th>
+            <th style="text-align:left;padding:.75rem;color:var(--text-muted);font-weight:600;">Email</th>
+            <th style="text-align:left;padding:.75rem;color:var(--text-muted);font-weight:600;">Joined</th>
+            <th style="text-align:left;padding:.75rem;color:var(--text-muted);font-weight:600;">Status</th>
+            <th style="text-align:left;padding:.75rem;color:var(--text-muted);font-weight:600;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr style="border-bottom:1px solid var(--border-color);transition:.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+            <td style="padding:.75rem;">
+              <div style="display:flex;align-items:center;gap:.75rem;">
+                <img src="{{ u.profile.get_profile_pic_url }}" alt="{{ u.username }}"
+                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;"
+                     onerror="this.src='{% static 'images/default_avatar.png' %}'">
+                <div>
+                  <a href="{% url 'user_profile' u.username %}" style="color:var(--vibe-purple);font-weight:600;text-decoration:none;">@{{ u.username }}</a>
+                  {% if u.is_staff %}<span class="badge-admin" style="font-size:.6rem;">ADMIN</span>{% endif %}
+                  <p style="font-size:.75rem;color:var(--text-muted);">{{ u.get_full_name }}</p>
+                </div>
+              </div>
+            </td>
+            <td style="padding:.75rem;color:var(--text-secondary);">{{ u.email }}</td>
+            <td style="padding:.75rem;color:var(--text-muted);">{{ u.date_joined|date:"M d, Y" }}</td>
+            <td style="padding:.75rem;">
+              <span style="font-size:.72rem;padding:.2rem .6rem;border-radius:9999px;
+                background:{% if u.is_active %}rgba(16,185,129,.15){% else %}rgba(239,68,68,.15){% endif %};
+                color:{% if u.is_active %}var(--vibe-green){% else %}#EF4444{% endif %};">
+                {% if u.is_active %}Active{% else %}Inactive{% endif %}
+              </span>
+            </td>
+            <td style="padding:.75rem;">
+              {% if u != request.user %}
+              <form method="post" action="{% url 'admin_toggle_user' u.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button class="btn-vibe btn-sm {% if u.is_active %}btn-secondary{% else %}btn-primary{% endif %}"
+                        style="font-size:.72rem;padding:.3rem .7rem;"
+                        onclick="return confirm('{% if u.is_active %}Deactivate{% else %}Activate{% endif %} {{ u.username }}?')">
+                  {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+              </form>
+              {% else %}
+                <span style="font-size:.72rem;color:var(--text-muted);">That's you!</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if users.has_other_pages %}
+    <div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+      {% if users.has_previous %}
+        <a href="?page={{ users.previous_page_number }}" class="btn-vibe btn-secondary btn-sm">← Prev</a>
+      {% endif %}
+      <span style="padding:.4rem .875rem;background:var(--bg-tertiary);border-radius:var(--radius-full);font-size:.82rem;color:var(--text-muted);">
+        {{ users.number }} / {{ users.paginator.num_pages }}
+      </span>
+      {% if users.has_next %}
+        <a href="?page={{ users.next_page_number }}" class="btn-vibe btn-secondary btn-sm">Next →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block right_sidebar %}
+<!-- Trending on explore page -->
+<div class="widget-card">
+  <h3 class="widget-title">🔥 Top Tags</h3>
+  {% for tag in trending_hashtags %}
+    <a href="{% url 'hashtag_feed' tag.name %}" class="trending-item">
+      <span class="trending-tag">#{{ tag.name }}</span>
+      <span class="trending-count">{{ tag.get_post_count }}</span>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Search Banner -->
+<div class="explore-hero">
+  <h1>🔍 Explore VIBE</h1>
+  <form method="get" action="{% url 'explore' %}" class="explore-search-bar">
+    <i class="fas fa-search explore-search-btn"></i>
+    <input type="text" name="q" value="{{ query }}" 
+           placeholder="Search users, posts, #hashtags..." autofocus>
+  </form>
+</div>
+
+{% if query %}
+  <!-- Search Filter Tabs -->
+  <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;overflow-x:auto;padding-bottom:.25rem;">
+    <a href="?q={{ query }}&type=all" class="btn-vibe btn-sm {% if search_type == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+    <a href="?q={{ query }}&type=posts" class="btn-vibe btn-sm {% if search_type == 'posts' %}btn-primary{% else %}btn-secondary{% endif %}">📝 Posts</a>
+    <a href="?q={{ query }}&type=users" class="btn-vibe btn-sm {% if search_type == 'users' %}btn-primary{% else %}btn-secondary{% endif %}">👤 Users</a>
+    <a href="?q={{ query }}&type=hashtags" class="btn-vibe btn-sm {% if search_type == 'hashtags' %}btn-primary{% else %}btn-secondary{% endif %}"># Hashtags</a>
+  </div>
+
+  <!-- Users Results -->
+  {% if users %}
+  <div class="vibe-card" style="margin-bottom:1.5rem;">
+    <h3 class="widget-title">👤 People</h3>
+    {% for result_user in users %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border-color);">
+      <a href="{% url 'user_profile' result_user.username %}" style="display:flex;align-items:center;gap:.875rem;text-decoration:none;">
+        <img src="{{ result_user.profile.get_profile_pic_url }}" alt="{{ result_user.username }}"
+             style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color);"
+             onerror="this.src='{% static 'images/default_avatar.png' %}'">
+        <div>
+          <span style="font-weight:600;color:var(--text-primary);display:block;font-size:.9rem;">
+            {{ result_user.get_full_name|default:result_user.username }}
+            {% if result_user.profile.is_verified %}✓{% endif %}
+          </span>
+          <span style="color:var(--text-muted);font-size:.8rem;">@{{ result_user.username }}</span>
+          {% if result_user.profile.bio %}
+            <span style="color:var(--text-secondary);font-size:.78rem;display:block;">{{ result_user.profile.bio|truncatechars:60 }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% if user.is_authenticated and result_user != user %}
+        <button class="btn-follow-sm follow-btn" data-username="{{ result_user.username }}">Follow</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Hashtag Results -->
+  {% if hashtags %}
+  <div class="vibe-card" style="margin-bottom:1.5rem;">
+    <h3 class="widget-title"># Hashtags</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.5rem 0;">
+      {% for tag in hashtags %}
+        <a href="{% url 'hashtag_feed' tag.name %}" class="hashtag-pill"
+           style="font-size:.875rem;padding:.35rem 1rem;">
+          #{{ tag.name }}
+          <span style="margin-left:.5rem;opacity:.7;font-weight:400;">{{ tag.get_post_count }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Post Results -->
+  {% if posts %}
+  <div>
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">
+      📝 Posts
+    </h3>
+    {% for post in posts %}
+      {% include 'posts/post_card.html' with post=post %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not users and not hashtags and not posts %}
+    <div class="empty-state">
+      <div class="empty-state-emoji">🔍</div>
+      <h3>No results for "{{ query }}"</h3>
+      <p>Try different keywords or browse trending content below.</p>
+    </div>
+  {% endif %}
+
+{% else %}
+  <!-- No search — show trending posts -->
+  <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">
+    🔥 Trending Now
+  </h3>
+
+  <!-- Image Grid -->
+  {% with image_posts=posts|dictsortreversed:"created_at" %}
+  {% if image_posts %}
+  <div class="posts-grid" style="margin-bottom:1.5rem;">
+    {% for post in image_posts %}
+      {% if post.image %}
+      <a href="{% url 'post_detail' post.id %}" class="post-grid-item">
+        <img src="{{ post.image.url }}" alt="Post" loading="lazy">
+        <div class="post-grid-overlay">
+          <span>❤️ {{ post.get_likes_count }}</span>
+          <span>💬 {{ post.get_comments_count }}</span>
+        </div>
+      </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Text posts -->
+  {% for post in posts %}
+    {% if not post.image and not post.video %}
+      {% include 'posts/post_card.html' with post=post %}
+    {% endif %}
+  {% empty %}
+    <div class="empty-state">
+      <div class="empty-state-emoji">🌐</div>
+      <h3>Nothing here yet</h3>
+      <p>Be the first to post something amazing!</p>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

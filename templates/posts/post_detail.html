@@ -1,0 +1,131 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+
+  <!-- Back button -->
+  <a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--text-muted);text-decoration:none;font-size:.875rem;margin-bottom:1rem;transition:var(--transition);" onmouseover="this.style.color='var(--vibe-purple)'" onmouseout="this.style.color='var(--text-muted)'">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
+
+  <!-- Full Post Card -->
+  <div class="post-card" style="margin-bottom:0;">
+    {% include 'posts/post_card.html' with post=post %}
+  </div>
+
+  <!-- All Comments Section -->
+  <div class="vibe-card" style="margin-top:1rem;">
+    <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1.25rem;">
+      💬 Comments ({{ post.get_comments_count }})
+    </h3>
+
+    <!-- Comment Input -->
+    {% if user.is_authenticated %}
+    <div class="comment-form" style="margin-bottom:1.25rem;">
+      <img src="{{ user.profile.get_profile_pic_url }}" alt="{{ user.username }}"
+           onerror="this.src='{% static 'images/default_avatar.png' %}'">
+      <form class="comment-form-ajax comment-input-wrap" data-post-id="{{ post.id }}" style="flex:1;">
+        {% csrf_token %}
+        <input type="text" class="comment-input" placeholder="Add a comment..." maxlength="500">
+        <button type="submit" class="comment-submit-btn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Comments List -->
+    <div class="comments-list" data-post-id="{{ post.id }}">
+      {% for comment in comments %}
+        {% if not comment.is_deleted %}
+        <div class="comment-item" data-comment-id="{{ comment.id }}">
+          <img src="{{ comment.author.profile.get_profile_pic_url }}"
+               alt="{{ comment.author.username }}"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <div style="flex:1;">
+            <div class="comment-bubble">
+              <a href="{% url 'user_profile' comment.author.username %}" style="text-decoration:none;">
+                <span class="comment-author-name">{{ comment.author.username }}</span>
+              </a>
+              <p class="comment-text">{{ comment.content }}</p>
+            </div>
+            <div class="comment-meta">
+              <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+              {% if user.is_authenticated %}
+                <button class="comment-reply-btn" onclick="showReplyForm({{ comment.id }})">Reply</button>
+              {% endif %}
+              {% if user == comment.author %}
+                <button class="comment-reply-btn" style="color:var(--vibe-pink);" onclick="deleteComment({{ comment.id }})">Delete</button>
+              {% endif %}
+            </div>
+
+            <!-- Reply form (hidden) -->
+            <div id="reply-form-{{ comment.id }}" style="display:none;margin-top:.5rem;">
+              <form class="comment-form-ajax comment-input-wrap" data-post-id="{{ post.id }}" data-parent-id="{{ comment.id }}" style="flex:1;">
+                {% csrf_token %}
+                <input type="text" class="comment-input" placeholder="Write a reply..." maxlength="500">
+                <button type="submit" class="comment-submit-btn">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- Replies -->
+            {% for reply in comment.replies.all %}
+              {% if not reply.is_deleted %}
+              <div class="comment-item" style="margin-top:.5rem;margin-left:1rem;">
+                <img src="{{ reply.author.profile.get_profile_pic_url }}"
+                     alt="{{ reply.author.username }}"
+                     style="width:28px;height:28px;border-radius:50%;object-fit:cover;"
+                     onerror="this.src='{% static 'images/default_avatar.png' %}'">
+                <div class="comment-bubble">
+                  <span class="comment-author-name">{{ reply.author.username }}</span>
+                  <p class="comment-text">{{ reply.content }}</p>
+                  <div class="comment-meta">
+                    <span class="comment-time">{{ reply.created_at|timesince }} ago</span>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      {% empty %}
+        <div class="empty-state" style="padding:2rem 0;">
+          <div class="empty-state-emoji" style="font-size:2.5rem;">💭</div>
+          <p style="color:var(--text-muted);">No comments yet. Be the first!</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function showReplyForm(commentId) {
+  const form = document.getElementById(`reply-form-${commentId}`);
+  if (form) {
+    form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+    form.querySelector('input')?.focus();
+  }
+}
+
+function deleteComment(commentId) {
+  if (!confirm('Delete this comment?')) return;
+  fetch(`/comments/${commentId}/delete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCsrfToken(),
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      const el = document.querySelector(`[data-comment-id="${commentId}"]`);
+      if (el) el.remove();
+      Toast.show('Comment deleted.', 'success');
+    }
+  });
+}
+</script>
+{% endblock %}

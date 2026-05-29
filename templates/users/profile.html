@@ -1,0 +1,232 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- Profile Cover + Info -->
+<div style="border-radius:var(--radius-xl);overflow:hidden;border:1px solid var(--border-color);margin-bottom:1.5rem;">
+
+  <!-- Cover Image -->
+  <div class="profile-cover">
+    {% if profile.cover_pic %}
+      <img src="{{ profile.cover_pic.url }}" alt="Cover">
+    {% else %}
+      <div class="profile-cover-gradient"></div>
+      <!-- Decorative pattern -->
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 0,transparent 50%) 0 0/20px 20px;"></div>
+    {% endif %}
+  </div>
+
+  <!-- Profile Info Section -->
+  <div class="profile-info-section">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+
+      <!-- Avatar -->
+      <div class="profile-avatar-wrap">
+        <img src="{{ profile.get_profile_pic_url }}" alt="{{ profile_user.username }}"
+             class="profile-avatar"
+             onerror="this.src='{% static 'images/default_avatar.png' %}'">
+        {% if profile.is_verified %}
+          <div class="verified-badge" title="Verified Account">✓</div>
+        {% endif %}
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex;gap:.75rem;align-items:center;padding-bottom:.5rem;">
+        {% if is_own_profile %}
+          <a href="{% url 'edit_profile' profile_user.username %}" class="btn-vibe btn-secondary btn-sm">
+            <i class="fas fa-pen"></i> Edit Profile
+          </a>
+        {% elif user.is_authenticated %}
+          <button class="btn-vibe btn-primary btn-sm follow-btn {% if is_following %}following{% endif %}"
+                  data-username="{{ profile_user.username }}">
+            {% if is_following %}Following{% else %}Follow{% endif %}
+          </button>
+          <div class="dropdown">
+            <button class="btn-vibe btn-secondary btn-sm" data-dropdown="profile-options">
+              <i class="fas fa-ellipsis"></i>
+            </button>
+            <div class="dropdown-menu" id="profile-options">
+              <button class="dropdown-item danger" onclick="if(confirm('Block @{{ profile_user.username }}?')) window.location='/profile/{{ profile_user.username }}/block/'">
+                <i class="fas fa-ban"></i> Block
+              </button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Name & Handle -->
+    <h1 class="profile-name" style="margin-top:.5rem;">
+      {{ profile_user.get_full_name|default:profile_user.username }}
+      {% if profile_user.is_staff %}
+        <span class="badge-admin">ADMIN</span>
+      {% endif %}
+    </h1>
+    <p class="profile-username">@{{ profile_user.username }}</p>
+
+    <!-- Bio -->
+    {% if profile.bio %}
+      <p class="profile-bio">{{ profile.bio }}</p>
+    {% endif %}
+
+    <!-- Meta (location, website, joined) -->
+    <div class="profile-meta">
+      {% if profile.location %}
+        <span class="profile-meta-item">
+          <i class="fas fa-location-dot" style="color:var(--vibe-pink)"></i> {{ profile.location }}
+        </span>
+      {% endif %}
+      {% if profile.website %}
+        <span class="profile-meta-item">
+          <i class="fas fa-link" style="color:var(--vibe-purple)"></i>
+          <a href="{{ profile.website }}" target="_blank" rel="noopener">{{ profile.website|truncatechars:30 }}</a>
+        </span>
+      {% endif %}
+      <span class="profile-meta-item">
+        <i class="fas fa-calendar" style="color:var(--vibe-cyan)"></i>
+        Joined {{ profile_user.date_joined|date:"M Y" }}
+      </span>
+      {% if profile.is_private %}
+        <span class="profile-meta-item">
+          <i class="fas fa-lock" style="color:var(--vibe-orange)"></i> Private
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div class="profile-stats">
+      <a href="{% url 'user_profile' profile_user.username %}" class="profile-stat">
+        <span class="profile-stat-num">{{ posts_count }}</span>
+        <span class="profile-stat-label">Posts</span>
+      </a>
+      <a href="{% url 'followers_list' profile_user.username %}" class="profile-stat">
+        <span class="profile-stat-num follower-count">{{ followers_count }}</span>
+        <span class="profile-stat-label">Followers</span>
+      </a>
+      <a href="{% url 'following_list' profile_user.username %}" class="profile-stat">
+        <span class="profile-stat-num">{{ following_count }}</span>
+        <span class="profile-stat-label">Following</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Posts Section -->
+{% if is_private_and_not_following %}
+  <div class="vibe-card" style="text-align:center;padding:3rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+    <h3 style="font-family:var(--font-display);margin-bottom:.5rem;">This account is private</h3>
+    <p style="color:var(--text-muted);margin-bottom:1.5rem;">Follow @{{ profile_user.username }} to see their posts.</p>
+    {% if user.is_authenticated %}
+      <button class="btn-vibe btn-primary follow-btn" data-username="{{ profile_user.username }}">
+        Follow to Unlock
+      </button>
+    {% endif %}
+  </div>
+
+{% else %}
+
+  <!-- Posts Grid / List Toggle -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--text-primary);">
+      Posts
+    </h3>
+    <div style="display:flex;gap:.5rem;">
+      <button onclick="switchView('grid')" id="grid-btn" class="nav-icon-btn" title="Grid View">
+        <i class="fas fa-grid-2"></i>
+      </button>
+      <button onclick="switchView('list')" id="list-btn" class="nav-icon-btn" title="List View">
+        <i class="fas fa-list"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- GRID VIEW (default for profiles with images) -->
+  <div id="posts-grid-view" class="posts-grid">
+    {% for post in posts %}
+      {% if post.image %}
+        <a href="{% url 'post_detail' post.id %}" class="post-grid-item">
+          <img src="{{ post.image.url }}" alt="Post" loading="lazy">
+          <div class="post-grid-overlay">
+            <span>❤️ {{ post.get_likes_count }}</span>
+            <span>💬 {{ post.get_comments_count }}</span>
+          </div>
+        </a>
+      {% endif %}
+    {% empty %}
+      <!-- Shown in list view too -->
+    {% endfor %}
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="posts-list-view" style="display:none;">
+    {% for post in posts %}
+      {% include 'posts/post_card.html' with post=post %}
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-emoji">📝</div>
+        <h3>No posts yet</h3>
+        <p>{% if is_own_profile %}Share your first post!{% else %}{{ profile_user.username }} hasn't posted yet.{% endif %}</p>
+        {% if is_own_profile %}
+          <button class="btn-vibe btn-primary" data-modal="create-post-modal">
+            <i class="fas fa-plus"></i> Create Post
+          </button>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- All text posts shown in a list below the grid -->
+  {% with text_posts=posts %}
+  {% if text_posts %}
+  <div id="text-posts-list" style="margin-top:1rem;">
+    {% for post in text_posts %}
+      {% if not post.image and not post.video %}
+        {% include 'posts/post_card.html' with post=post %}
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Pagination -->
+  {% if posts.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem;">
+    {% if posts.has_previous %}
+      <a href="?page={{ posts.previous_page_number }}" class="btn-vibe btn-secondary btn-sm">← Prev</a>
+    {% endif %}
+    <span style="padding:.4rem .875rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-full);font-size:.85rem;color:var(--text-muted);">
+      Page {{ posts.number }} of {{ posts.paginator.num_pages }}
+    </span>
+    {% if posts.has_next %}
+      <a href="?page={{ posts.next_page_number }}" class="btn-vibe btn-secondary btn-sm">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endif %}
+
+<script>
+function switchView(type) {
+  const grid = document.getElementById('posts-grid-view');
+  const list = document.getElementById('posts-list-view');
+  const textList = document.getElementById('text-posts-list');
+  const gridBtn = document.getElementById('grid-btn');
+  const listBtn = document.getElementById('list-btn');
+
+  if (type === 'grid') {
+    grid.style.display = 'grid';
+    if (textList) textList.style.display = 'block';
+    list.style.display = 'none';
+    gridBtn.style.color = 'var(--vibe-purple)';
+    listBtn.style.color = '';
+  } else {
+    grid.style.display = 'none';
+    if (textList) textList.style.display = 'none';
+    list.style.display = 'block';
+    listBtn.style.color = 'var(--vibe-purple)';
+    gridBtn.style.color = '';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% load static %}
+
+<div class="post-card" data-post-id="{{ post.id }}">
+
+  <!-- Post Header -->
+  <div class="post-header">
+    <a href="{% url 'user_profile' post.author.username %}" class="post-author">
+      <img src="{{ post.author.profile.get_profile_pic_url }}"
+           alt="{{ post.author.username }}"
+           class="post-author-avatar"
+           onerror="this.src='{% static 'images/default_avatar.png' %}'">
+      <div>
+        <span class="post-author-name">
+          {{ post.author.get_full_name|default:post.author.username }}
+          {% if post.author.profile.is_verified %}
+            <span class="badge-verified" title="Verified">✓</span>
+          {% endif %}
+          {% if post.author.is_staff %}
+            <span class="badge-admin">ADMIN</span>
+          {% endif %}
+        </span>
+        <span class="post-author-handle">@{{ post.author.username }} · {{ post.created_at|timesince }} ago</span>
+      </div>
+    </a>
+
+    <!-- Post Options Menu -->
+    {% if user.is_authenticated %}
+    <div class="dropdown">
+      <button class="post-menu-btn" data-dropdown="post-menu-{{ post.id }}" aria-label="Post options">
+        <i class="fas fa-ellipsis"></i>
+      </button>
+      <div class="dropdown-menu" id="post-menu-{{ post.id }}">
+        {% if user == post.author %}
+          <a href="{% url 'post_detail' post.id %}" class="dropdown-item">
+            <i class="fas fa-eye"></i> View Post
+          </a>
+          <button class="dropdown-item danger" onclick="deletePost({{ post.id }})">
+            <i class="fas fa-trash"></i> Delete Post
+          </button>
+        {% else %}
+          <button class="dropdown-item" data-modal="report-modal-{{ post.id }}">
+            <i class="fas fa-flag"></i> Report
+          </button>
+          <button class="dropdown-item danger" onclick="if(confirm('Block @{{ post.author.username }}?')) window.location='/profile/{{ post.author.username }}/block/'">
+            <i class="fas fa-ban"></i> Block User
+          </button>
+        {% endif %}
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="sharePost({{ post.id }})">
+          <i class="fas fa-link"></i> Copy Link
+        </button>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Post Content -->
+  <div class="post-content">
+    <p>{{ post.content }}</p>
+  </div>
+
+  <!-- Post Media -->
+  {% if post.image %}
+    <div class="post-media">
+      <img src="{{ post.image.url }}" alt="Post image" loading="lazy">
+    </div>
+  {% elif post.video %}
+    <div class="post-media">
+      <video src="{{ post.video.url }}" controls preload="metadata"
+             style="width:100%;max-height:500px;background:#000;"></video>
+    </div>
+  {% endif %}
+
+  <!-- Hashtag Pills -->
+  {% if post.hashtags.all %}
+  <div style="padding:.25rem 1.25rem .75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
+    {% for tag in post.hashtags.all %}
+      <a href="{% url 'hashtag_feed' tag.name %}" class="hashtag-pill">#{{ tag.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Post Stats -->
+  <div style="padding:.25rem 1.25rem;font-size:.78rem;color:var(--text-muted);border-top:1px solid var(--border-color);">
+    <span>{{ post.get_likes_count }} likes</span>
+    <span style="margin:0 .5rem">·</span>
+    <span>{{ post.get_comments_count }} comments</span>
+  </div>
+
+  <!-- Post Footer (Action Buttons) -->
+  <div class="post-footer">
+    <div class="post-reactions">
+
+      <!-- Like Button -->
+      {% if user.is_authenticated %}
+        <button class="reaction-btn like-btn"
+                data-post-id="{{ post.id }}">
+          <span class="like-icon-svg">🤍</span>
+          <span class="like-count">{{ post.get_likes_count }}</span>
+        </button>
+      {% endif %}
+
+      <!-- Comment Button -->
+      <button class="reaction-btn comment-btn" data-post-id="{{ post.id }}">
+        💬 <span class="comment-count">{{ post.get_comments_count }}</span>
+      </button>
+
+      <!-- Share Button -->
+      <button class="reaction-btn share-btn" onclick="sharePost({{ post.id }})">
+        🔗 Share
+      </button>
+    </div>
+
+    <!-- View Post Link -->
+    <a href="{% url 'post_detail' post.id %}"
+       style="font-size:.78rem;color:var(--text-muted);text-decoration:none;transition:var(--transition);"
+       onmouseover="this.style.color='var(--vibe-purple)'"
+       onmouseout="this.style.color='var(--text-muted)'">
+      View all →
+    </a>
+  </div>
+
+  <!-- Inline Comment Section (hidden by default) -->
+  {% if user.is_authenticated %}
+  <div class="comments-section hidden" data-post-id="{{ post.id }}">
+
+    <!-- Recent comments preview -->
+    <div class="comments-list" data-post-id="{{ post.id }}">
+      {% for comment in post.comments.all|slice:":3" %}
+        {% if not comment.is_deleted %}
+        <div class="comment-item" data-comment-id="{{ comment.id }}">
+          <img src="{{ comment.author.profile.get_profile_pic_url }}"
+               alt="{{ comment.author.username }}"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <div class="comment-bubble">
+            <span class="comment-author-name">{{ comment.author.username }}</span>
+            <p class="comment-text">{{ comment.content }}</p>
+            <div class="comment-meta">
+              <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Comment Input Form -->
+    <div class="comment-form">
+      <img src="{{ user.profile.get_profile_pic_url }}"
+           alt="{{ user.username }}"
+           onerror="this.src='{% static 'images/default_avatar.png' %}'">
+      <form class="comment-form-ajax comment-input-wrap" data-post-id="{{ post.id }}">
+        {% csrf_token %}
+        <input type="text" class="comment-input" placeholder="Write a comment..." maxlength="500">
+        <button type="submit" class="comment-submit-btn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Report Modal for this post -->
+{% if user.is_authenticated %}
+{% if user != post.author %}
+<div class="modal-overlay" id="report-modal-{{ post.id }}">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">🚩 Report Post</h3>
+      <button class="modal-close"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <select class="vibe-input" name="report_type" id="report-type-{{ post.id }}">
+          <option value="spam">Spam</option>
+          <option value="harassment">Harassment</option>
+          <option value="hate_speech">Hate Speech</option>
+          <option value="violence">Violence</option>
+          <option value="misinformation">Misinformation</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Details (optional)</label>
+        <textarea class="vibe-input" name="report_description"
+                  id="report-desc-{{ post.id }}"
+                  placeholder="Tell us more..." rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-vibe btn-secondary modal-close">Cancel</button>
+      <button class="btn-vibe btn-danger" onclick="submitReport({{ post.id }})">Submit Report</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<script>
+function deletePost(postId) {
+  if (!confirm('Delete this post? This cannot be undone.')) return;
+  fetch('/posts/' + postId + '/delete/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCsrfToken(),
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.success) {
+      var card = document.querySelector('[data-post-id="' + postId + '"]');
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transition = 'opacity .3s ease';
+        setTimeout(function(){ card.remove(); }, 300);
+      }
+      Toast.show('Post deleted.', 'success');
+    }
+  });
+}
+
+function submitReport(postId) {
+  var type = document.getElementById('report-type-' + postId);
+  var desc = document.getElementById('report-desc-' + postId);
+  var fd = new FormData();
+  fd.append('report_type', type ? type.value : 'spam');
+  fd.append('description', desc ? desc.value : '');
+  fd.append('csrfmiddlewaretoken', getCsrfToken());
+
+  fetch('/posts/' + postId + '/report/', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.success) {
+      Toast.show('Report submitted!', 'success');
+      Modal.closeAll();
+    }
+  });
+}
+</script>

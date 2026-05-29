@@ -1,0 +1,87 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      🔔 Notifications
+    </h2>
+    {% if notifications %}
+      <span style="font-size:.8rem;color:var(--text-muted);">All marked as read</span>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+    <div style="display:flex;flex-direction:column;gap:.625rem;">
+      {% for notif in notifications %}
+        <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+
+          <!-- Sender avatar with type icon overlay -->
+          <div style="position:relative;flex-shrink:0;">
+            <img src="{{ notif.sender.profile.get_profile_pic_url }}" 
+                 alt="{{ notif.sender.username }}"
+                 class="notif-avatar"
+                 onerror="this.src='{% static 'images/default_avatar.png' %}'">
+            <div class="notif-icon 
+              {% if notif.notification_type == 'like' %}like-icon
+              {% elif notif.notification_type == 'comment' %}comment-icon
+              {% elif notif.notification_type == 'follow' %}follow-icon
+              {% else %}like-icon{% endif %}">
+              {% if notif.notification_type == 'like' %}❤️
+              {% elif notif.notification_type == 'comment' %}💬
+              {% elif notif.notification_type == 'follow' %}👤
+              {% elif notif.notification_type == 'mention' %}@
+              {% elif notif.notification_type == 'friend_request' %}🤝
+              {% else %}🔔{% endif %}
+            </div>
+          </div>
+
+          <!-- Notification text -->
+          <div class="notif-text">
+            <p class="notif-msg">
+              <strong>
+                <a href="{% url 'user_profile' notif.sender.username %}" style="color:var(--vibe-purple);text-decoration:none;">
+                  {{ notif.sender.username }}
+                </a>
+              </strong>
+              {{ notif.get_message|slice:"notif.sender.username|length:" }}
+              {% comment %}Full message from model method{% endcomment %}
+              {% if notif.notification_type == 'like' %}liked your post{% endif %}
+              {% if notif.notification_type == 'comment' %}commented on your post{% endif %}
+              {% if notif.notification_type == 'follow' %}started following you{% endif %}
+              {% if notif.notification_type == 'mention' %}mentioned you{% endif %}
+              {% if notif.notification_type == 'friend_request' %}sent you a friend request{% endif %}
+            </p>
+            <p class="notif-time">{{ notif.created_at|timesince }} ago</p>
+          </div>
+
+          <!-- Post thumbnail if applicable -->
+          {% if notif.post and notif.post.image %}
+            <a href="{% url 'post_detail' notif.post.id %}" style="flex-shrink:0;">
+              <img src="{{ notif.post.image.url }}" alt="Post"
+                   style="width:52px;height:52px;border-radius:var(--radius-md);object-fit:cover;border:1px solid var(--border-color);">
+            </a>
+          {% elif notif.post %}
+            <a href="{% url 'post_detail' notif.post.id %}" 
+               style="flex-shrink:0;width:52px;height:52px;border-radius:var(--radius-md);background:var(--bg-tertiary);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:.7rem;text-decoration:none;text-align:center;padding:.25rem;">
+              View Post
+            </a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state-emoji">🔕</div>
+      <h3>No notifications yet</h3>
+      <p>When someone likes or comments on your posts, or follows you, you'll see it here.</p>
+      <a href="{% url 'explore' %}" class="btn-vibe btn-primary">
+        <i class="fas fa-compass"></i> Explore VIBE
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

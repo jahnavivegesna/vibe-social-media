@@ -1,0 +1,143 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+
+  <div class="vibe-card">
+    <h2 style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;margin-bottom:.25rem;background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      Edit Profile
+    </h2>
+    <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:2rem;">Keep your profile fresh and up to date ✨</p>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Profile Picture -->
+      <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid var(--border-color);">
+        <div style="position:relative;">
+          <img src="{{ profile.get_profile_pic_url }}" alt="Profile"
+               id="profile-pic-preview"
+               style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--vibe-purple);transition:var(--transition);"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <label for="{{ form.profile_pic.id_for_label }}"
+                 style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-radius:50%;background:var(--gradient-main);color:white;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;border:2px solid var(--bg-primary);">
+            <i class="fas fa-camera"></i>
+          </label>
+        </div>
+        <div>
+          <h3 style="font-weight:700;color:var(--text-primary);margin-bottom:.25rem;">{{ user.username }}</h3>
+          <label for="{{ form.profile_pic.id_for_label }}" style="color:var(--vibe-purple);font-size:.875rem;font-weight:600;cursor:pointer;">
+            Change profile photo
+          </label>
+          {{ form.profile_pic }}
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">First Name</label>
+          <input type="text" name="first_name" class="vibe-input" value="{{ form.initial.first_name }}" placeholder="First name">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Last Name</label>
+          <input type="text" name="last_name" class="vibe-input" value="{{ form.initial.last_name }}" placeholder="Last name">
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div class="form-group">
+        <label class="form-label">Bio</label>
+        <textarea name="bio" class="vibe-input" rows="3" maxlength="500"
+                  placeholder="Tell people about yourself..."
+                  style="resize:vertical;">{{ form.initial.bio }}</textarea>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:.3rem;text-align:right;" id="bio-count">
+          {{ profile.bio|length|default:"0" }}/500
+        </div>
+      </div>
+
+      <!-- Website -->
+      <div class="form-group">
+        <label class="form-label">Website</label>
+        <input type="url" name="website" class="vibe-input" value="{{ profile.website }}" placeholder="https://yourwebsite.com">
+      </div>
+
+      <!-- Location -->
+      <div class="form-group">
+        <label class="form-label">Location</label>
+        <input type="text" name="location" class="vibe-input" value="{{ profile.location }}" placeholder="Where are you from?">
+      </div>
+
+      <!-- Cover Picture -->
+      <div class="form-group">
+        <label class="form-label">Cover Photo</label>
+        {% if profile.cover_pic %}
+          <div style="margin-bottom:.75rem;border-radius:var(--radius-md);overflow:hidden;height:120px;">
+            <img src="{{ profile.cover_pic.url }}" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        {% endif %}
+        {{ form.cover_pic }}
+        <p style="font-size:.75rem;color:var(--text-muted);margin-top:.3rem;">Recommended: 1500×500px</p>
+      </div>
+
+      <!-- Privacy Setting -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem;background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:1.5rem;">
+        <div>
+          <p style="font-weight:600;font-size:.9rem;color:var(--text-primary);">Private Account</p>
+          <p style="font-size:.78rem;color:var(--text-muted);">Only approved followers see your posts</p>
+        </div>
+        <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
+          <input type="checkbox" name="is_private" id="is_private" {% if profile.is_private %}checked{% endif %}
+                 style="position:absolute;opacity:0;width:0;height:0;">
+          <div id="toggle-track" style="width:44px;height:24px;border-radius:12px;background:{% if profile.is_private %}var(--gradient-main){% else %}var(--border-color){% endif %};transition:.3s;position:relative;">
+            <div id="toggle-thumb" style="position:absolute;top:3px;left:{% if profile.is_private %}23px{% else %}3px{% endif %};width:18px;height:18px;border-radius:50%;background:white;transition:.3s;box-shadow:0 2px 4px rgba(0,0,0,.2);"></div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Submit -->
+      <div style="display:flex;gap:1rem;">
+        <button type="submit" class="btn-vibe btn-primary" style="flex:1;">
+          <i class="fas fa-check"></i> Save Changes
+        </button>
+        <a href="{% url 'user_profile' user.username %}" class="btn-vibe btn-secondary">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Bio character counter
+const bioField = document.querySelector('[name="bio"]');
+const bioCount = document.getElementById('bio-count');
+if (bioField && bioCount) {
+  bioField.addEventListener('input', () => {
+    bioCount.textContent = `${bioField.value.length}/500`;
+  });
+}
+
+// Profile pic preview
+document.querySelector('[name="profile_pic"]')?.addEventListener('change', function() {
+  if (this.files[0]) {
+    document.getElementById('profile-pic-preview').src = URL.createObjectURL(this.files[0]);
+  }
+});
+
+// Privacy toggle animation
+const privacyCheckbox = document.getElementById('is_private');
+const track = document.getElementById('toggle-track');
+const thumb = document.getElementById('toggle-thumb');
+privacyCheckbox?.addEventListener('change', function() {
+  if (this.checked) {
+    track.style.background = 'linear-gradient(135deg,#7C3AED,#EC4899)';
+    thumb.style.left = '23px';
+  } else {
+    track.style.background = 'var(--border-color)';
+    thumb.style.left = '3px';
+  }
+});
+</script>
+{% endblock %}

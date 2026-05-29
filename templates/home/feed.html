@@ -1,0 +1,61 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- Post Creator Card -->
+<div class="post-creator">
+  <div class="post-creator-top">
+    <img src="{{ user.profile.get_profile_pic_url }}" alt="{{ user.username }}"
+         onerror="this.src='{% static 'images/default_avatar.png' %}'">
+    <textarea class="post-textarea" placeholder="What's on your mind? Use #hashtags!" 
+              onclick="document.getElementById('create-post-modal').classList.add('open')" readonly
+              style="cursor:pointer;"></textarea>
+  </div>
+  <div class="post-creator-bottom">
+    <div class="post-actions">
+      <button class="post-action-btn image-btn" data-modal="create-post-modal">
+        <i class="fas fa-image"></i> Photo
+      </button>
+      <button class="post-action-btn video-btn" data-modal="create-post-modal">
+        <i class="fas fa-video"></i> Video
+      </button>
+    </div>
+    <button class="btn-vibe btn-primary btn-sm" data-modal="create-post-modal">
+      Post <i class="fas fa-paper-plane" style="margin-left:.3rem"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Posts Feed -->
+<div class="posts-feed">
+  {% if posts %}
+    {% for post in posts %}
+      {% include 'posts/post_card.html' with post=post %}
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state-emoji">🌊</div>
+      <h3>Your feed is empty</h3>
+      <p>Follow some people to see their posts here, or explore to discover new content.</p>
+      <a href="{% url 'explore' %}" class="btn-vibe btn-primary">
+        <i class="fas fa-compass"></i> Explore VIBE
+      </a>
+    </div>
+  {% endif %}
+
+  <!-- Infinite Scroll Sentinel -->
+  {% if posts.has_next %}
+    <div id="scroll-sentinel" style="display:flex;justify-content:center;padding:1rem;"></div>
+  {% else %}
+    <div id="scroll-sentinel">
+      {% if posts %}
+      <p class="text-center text-muted" style="padding:1.5rem;font-size:.85rem;">
+        ✨ You're all caught up! <a href="{% url 'explore' %}" style="color:var(--vibe-purple);">Discover more</a>
+      </p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

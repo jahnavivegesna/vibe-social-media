@@ -1,0 +1,59 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hashtag Hero -->
+<div style="background:var(--gradient-main);border-radius:var(--radius-xl);padding:2rem;margin-bottom:1.5rem;text-align:center;">
+  <div style="font-size:2.5rem;font-family:var(--font-display);font-weight:800;color:white;margin-bottom:.25rem;">
+    #{{ hashtag.name }}
+  </div>
+  <p style="color:rgba(255,255,255,.8);font-size:.9rem;">
+    {{ hashtag.get_post_count }} posts tagged with this
+  </p>
+</div>
+
+{% if posts %}
+  <!-- Image grid for this hashtag -->
+  {% with image_posts=posts %}
+    <div class="posts-grid" style="margin-bottom:1.5rem;">
+      {% for post in image_posts %}
+        {% if post.image %}
+          <a href="{% url 'post_detail' post.id %}" class="post-grid-item">
+            <img src="{{ post.image.url }}" alt="Post" loading="lazy">
+            <div class="post-grid-overlay">
+              <span>❤️ {{ post.get_likes_count }}</span>
+              <span>💬 {{ post.get_comments_count }}</span>
+            </div>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endwith %}
+
+  {% for post in posts %}
+    {% if not post.image %}
+      {% include 'posts/post_card.html' with post=post %}
+    {% endif %}
+  {% endfor %}
+
+  <!-- Pagination -->
+  {% if posts.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:.5rem;margin-top:1rem;">
+    {% if posts.has_previous %}
+      <a href="?page={{ posts.previous_page_number }}" class="btn-vibe btn-secondary btn-sm">← Prev</a>
+    {% endif %}
+    {% if posts.has_next %}
+      <a href="?page={{ posts.next_page_number }}" class="btn-vibe btn-secondary btn-sm">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state-emoji">🏷️</div>
+    <h3>No posts for #{{ hashtag.name }}</h3>
+    <p>Be the first to post with this hashtag!</p>
+    <button class="btn-vibe btn-primary" data-modal="create-post-modal">Create Post</button>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+  <div class="vibe-card">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+      <a href="{% url 'user_profile' profile_user.username %}" style="color:var(--text-muted);text-decoration:none;">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <div>
+        <h2 style="font-family:var(--font-display);font-size:1.2rem;font-weight:800;color:var(--text-primary);">{{ list_type }}</h2>
+        <p style="font-size:.8rem;color:var(--text-muted);">@{{ profile_user.username }}</p>
+      </div>
+    </div>
+
+    {% for follow in follows %}
+    {% with fu=follow.follower if list_type == 'Followers' else follow.following %}
+    {% with fu=follow.follower %}
+    {% if list_type == "Followers" %}
+      {% with display_user=follow.follower %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 0;border-bottom:1px solid var(--border-color);">
+        <a href="{% url 'user_profile' display_user.username %}" style="display:flex;align-items:center;gap:.875rem;text-decoration:none;">
+          <img src="{{ display_user.profile.get_profile_pic_url }}" alt="{{ display_user.username }}"
+               style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color);transition:var(--transition-bounce);"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'"
+               onmouseover="this.style.borderColor='var(--vibe-purple)'" onmouseout="this.style.borderColor='var(--border-color)'">
+          <div>
+            <p style="font-weight:600;font-size:.9rem;color:var(--text-primary);">{{ display_user.get_full_name|default:display_user.username }}</p>
+            <p style="font-size:.78rem;color:var(--text-muted);">@{{ display_user.username }}</p>
+            {% if display_user.profile.bio %}
+              <p style="font-size:.78rem;color:var(--text-secondary);">{{ display_user.profile.bio|truncatechars:50 }}</p>
+            {% endif %}
+          </div>
+        </a>
+        {% if user.is_authenticated and display_user != user %}
+          <button class="btn-follow-sm follow-btn" data-username="{{ display_user.username }}">Follow</button>
+        {% endif %}
+      </div>
+      {% endwith %}
+    {% else %}
+      {% with display_user=follow.following %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 0;border-bottom:1px solid var(--border-color);">
+        <a href="{% url 'user_profile' display_user.username %}" style="display:flex;align-items:center;gap:.875rem;text-decoration:none;">
+          <img src="{{ display_user.profile.get_profile_pic_url }}" alt="{{ display_user.username }}"
+               style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color);"
+               onerror="this.src='{% static 'images/default_avatar.png' %}'">
+          <div>
+            <p style="font-weight:600;font-size:.9rem;color:var(--text-primary);">{{ display_user.get_full_name|default:display_user.username }}</p>
+            <p style="font-size:.78rem;color:var(--text-muted);">@{{ display_user.username }}</p>
+          </div>
+        </a>
+        {% if user.is_authenticated and display_user != user %}
+          <button class="btn-follow-sm follow-btn" data-username="{{ display_user.username }}">Follow</button>
+        {% endif %}
+      </div>
+      {% endwith %}
+    {% endif %}
+    {% endwith %}
+    {% endwith %}
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-emoji">👥</div>
+        <h3>No {{ list_type }} yet</h3>
+        <p>{% if list_type == 'Followers' %}Nobody follows @{{ profile_user.username }} yet.{% else %}@{{ profile_user.username }} doesn't follow anyone yet.{% endif %}</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -79,21 +79,14 @@ WSGI_APPLICATION = 'vibe_project.wsgi.application'
 # DATABASE - MySQL Configuration
 # ============================================================
 # For MySQL, use these settings:
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vibe_db',
-        'USER': 'root',
-        'PASSWORD': 'janu@.16',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-    }
-}
+import dj_database_url
 
+DATABASES = {
+    'default': dj_database_url.config(
+        default='postgresql://glowupuser:AVIbZCA5bFq2CGnwm1f55m0y9bxwtEgW@dpg-d888r499rddc73b97rm0-a.oregon-postgres.render.com/glowup_ythv',
+        conn_max_age=600
+    )
+}
 # Fallback to SQLite for quick testing (comment out MySQL above and uncomment this):
 # DATABASES = {
 #     'default': {

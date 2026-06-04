@@ -2179,3 +2179,19 @@ body::before {
   font-weight: 700;
   margin-left: 0.25rem;
 }
+
+/* ============================================================
+   MOBILE PERFORMANCE FIX
+   ============================================================ */
+@media (max-width: 768px) {
+  .vibe-navbar,
+  .vibe-card,
+  .post-card,
+  .widget-card,
+  .auth-card,
+  .vibe-sidebar-left,
+  .modal {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
